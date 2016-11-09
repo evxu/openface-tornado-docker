@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-#!/usr/bin/env python
-
 # This tornado web server compares two images (from url) to judge if they are from the same source
 # Detect faces and extract face features using openface https://github.com/cmusatyalab/openface
 # Build webserver with tornado
@@ -29,6 +27,8 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import numpy as np
 import openface
+
+import gray2rgb from detectface
 
 PORT=8000
 np.set_printoptions(precision=2)
@@ -64,7 +64,7 @@ net = openface.TorchNeuralNet(args.networkModel, args.imgDim)
 #         time.time() - start))
 
 
-def drawrectagle(imgPath):
+def extract_face(imgPath):
     # rgbImg = cv2.imread(imgPath)
     # ImgName = os.path.basename(imgPath)
     # if rgbImg is None:
@@ -124,12 +124,17 @@ class MatchFaceHandler(tornado.web.RequestHandler):
         # print url2
         response = requests.get(url1)
         img1 = np.array(Image.open(StringIO.StringIO(response.content)))
+        if len(img1.shape) == 2:
+            img1 = gray2rgb(img1)
+
         response = requests.get(url2)
         img2 = np.array(Image.open(StringIO.StringIO(response.content)))
+        if len(img2.shape) == 2:
+            img1 = gray2rgb(img2)
 
         # do the detection
-        reps1 = drawrectagle(img1)
-        reps2 = drawrectagle(img2)
+        reps1 = extract_face(img1)
+        reps2 = extract_face(img2)
         # if reps1:
         #     n1 = len(reps1)
         #     print ('{} faces are detected in url1'.format(n1))

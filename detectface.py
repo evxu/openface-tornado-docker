@@ -50,9 +50,20 @@ net = openface.TorchNeuralNet(args.networkModel, args.imgDim)
 # if args.verbose:
 #     print("Loading the dlib and OpenFace models took {} seconds.".format(
 #         time.time() - start))
+def gray2rgb(grayImg):
+    # grayImg: numpy.narray
+    # gray image can be stored as float data type (0 to 1), or uint8 data type (0 to 255)
+    # gray image is 2D, copy it 3 times to create a 3D rgb image. (note: it is still gray image, not colored)
+    if (grayImg[0,0].dtype is not np.dtype('uint8')):
+        # convert the value to range from 0-255
+        grayImg = np.array(255*grayImg, dtype=np.dtype('unit8'))
+    w, h = grayImg.shape
+    rgbImg = np.empty((w,h,3),dtype = np.dtype('uint8'))
+    rgbImg[:,:,0] = rgbImg[:,:,1] = rgbImg[:,:,2] = grayImg
+    return rgbImg
 
 
-def drawrectagle(rgbImg):
+def detectface(rgbImg):
     bbs = align.getAllFaceBoundingBoxes(rgbImg)
     if len(bbs) == 0:
         return 0 #'Unable to find a frontal face'
@@ -88,7 +99,15 @@ class DetectFaceHandler(tornado.web.RequestHandler):
         url = self.get_argument('url')
         response = requests.get(url)
         rgbImg = np.array(Image.open(StringIO.StringIO(response.content)))
-        boundings = drawrectagle(rgbImg)
+        
+        # check image dimension
+        if len(rgbImg.shape) == 2:
+            rgbImg = gray2rgb(rgbImg)
+
+        # detect face
+        boundings = detectface(rgbImg)
+
+        # write results
         results = {'results': boundings, 'shape':rgbImg.shape}
         self.write(json.dumps(results))
         pass
@@ -103,7 +122,7 @@ class DetectFaceHandler(tornado.web.RequestHandler):
         # color image loaded by OpenCV is in BGR mode, should convert it to RGB mode.
         rgbImg = cv2.cvtColor(bgrImg, cv2.COLOR_BGR2RGB)
         # do the detection
-        boundings = drawrectagle(rgbImg)
+        boundings = detectface(rgbImg)
         # assume you have results in the following dict
         # results = {'results': [
         #                   # x, y, w, h
