@@ -28,7 +28,7 @@ from PIL import Image
 import numpy as np
 import openface
 
-import gray2rgb from detectface
+from detectface import gray2rgb
 
 PORT=8000
 np.set_printoptions(precision=2)
@@ -93,29 +93,31 @@ def extract_face(imgPath):
         reps.append(rep)
     return reps
 
-def CompareFace(reps1, reps2, score):
+def CompareFace(reps1, reps2):
     if not (reps1 and reps2):
         return 'None'
 
+    # use dd to record all distances. 
+    # If only return True or False, do not record the distances, return as soon as one distance is lower than the threshold
     # dd = np.array([])
+    shortest_d = 10.0
     for face1 in reps1:
         for face2 in reps2:
             # compute distance
             d = face1 - face2
-            d = np.dot(d,d)
-            if d < score:
-                return 'True'
-    # print 'scores:', dd
-    # if np.amin(dd) < score:
-    #     return 'True'
-    return 'False'
+            d = np.dot(d, d)
+            #dd = np.append(dd, d)
+            if d < shortest_d:
+                shortest_d = d
+    # print 'distance:', dd
+    # shortest_d = np.amin(dd)
+    # print 'shortest distance', shortest_d
+    return shortest_d
 
 class MatchFaceHandler(tornado.web.RequestHandler):
 
     def get(self):
         #start = time.time()
-        score = self.get_argument('score', 0.48) # 0.4 can also work
-        score = float(score)
         url1 = self.get_argument('url1')
         url2 = self.get_argument('url2')
         # print 'url1:'
@@ -130,7 +132,7 @@ class MatchFaceHandler(tornado.web.RequestHandler):
         response = requests.get(url2)
         img2 = np.array(Image.open(StringIO.StringIO(response.content)))
         if len(img2.shape) == 2:
-            img1 = gray2rgb(img2)
+            img2 = gray2rgb(img2)
 
         # do the detection
         reps1 = extract_face(img1)
@@ -147,8 +149,9 @@ class MatchFaceHandler(tornado.web.RequestHandler):
         # else:
         #     print 'None face is detected in url2'
 
-        rst = CompareFace(reps1, reps2, score)
-        self.write(rst)
+        dist = CompareFace(reps1, reps2)
+        rst = {'distance': dist}
+        self.write(json.dumps(rst))
         #print ('processing images took {} seconds'.format(time.time()-start))
         pass
 
