@@ -1,5 +1,6 @@
 from detectface import DetectFaceHandler
 from matchface import MatchFaceHandler
+from boxface import BoxFaceHandler
 import tornado.ioloop
 import tornado.web
 import tornado.options
@@ -19,8 +20,9 @@ if __name__ == "__main__":
     tornado.options.parse_command_line()
     app = tornado.web.Application(
     	handlers=[
-    	(r"/match/", MatchFaceHandler),
-    	(r"/detect/", DetectFaceHandler)
+    	(r"/matchface/", MatchFaceHandler),
+    	(r"/detectface/", DetectFaceHandler),
+        (r"/boxface/", BoxFaceHandler)
     	]
     )
     app.listen(PORT)
