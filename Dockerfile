@@ -10,6 +10,7 @@ RUN cd oft/src; pip install -r requirements.txt
 
 ADD ./detectface.py /oft/demo/
 ADD ./matchface.py /oft/demo/
+ADD ./boxface.py /oft/demo/
 ADD ./faceserver.py /oft/demo/
 
 EXPOSE 8000
