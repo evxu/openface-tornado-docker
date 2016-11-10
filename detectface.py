@@ -50,16 +50,16 @@ net = openface.TorchNeuralNet(args.networkModel, args.imgDim)
 # if args.verbose:
 #     print("Loading the dlib and OpenFace models took {} seconds.".format(
 #         time.time() - start))
-def gray2rgb(grayImg):
-    # grayImg: numpy.narray
-    # gray image can be stored as float data type (0 to 1), or uint8 data type (0 to 255)
-    # gray image is 2D, copy it 3 times to create a 3D rgb image. (note: it is still gray image, not colored)
-    if (grayImg[0,0].dtype is not np.dtype('uint8')):
+def grey2rgb(greyImg):
+    # greyImg: numpy.narray
+    # grey image can be stored as float data type (0 to 1), or uint8 data type (0 to 255)
+    # grey image is 2D, copy it 3 times to create a 3D rgb image. (note: it is still grey image, not colored)
+    if (greyImg[0,0].dtype is not np.dtype('uint8')):
         # convert the value to range from 0-255
-        grayImg = np.array(255*grayImg, dtype=np.dtype('unit8'))
-    w, h = grayImg.shape
+        greyImg = np.array(255*greyImg, dtype=np.dtype('unit8'))
+    w, h = greyImg.shape
     rgbImg = np.empty((w,h,3),dtype = np.dtype('uint8'))
-    rgbImg[:,:,0] = rgbImg[:,:,1] = rgbImg[:,:,2] = grayImg
+    rgbImg[:,:,0] = rgbImg[:,:,1] = rgbImg[:,:,2] = greyImg
     return rgbImg
 
 
@@ -92,17 +92,31 @@ def detectface(rgbImg):
         #                color=(102, 204, 255), thickness=-1)
     return boundings
 
+def draw_box(rgbImg, bbs):
+    annotatedImg = np.copy(rgbImg)
+    annotatedImg = cv2.cvtColor(annotatedImg, cv2.COLOR_RGB2BGR)
+    for b in bbs:
+        left_top = (b[0],b[1])
+        right_bottom = (b[0]+b[2], b[1]+b[3])
+        cv2.rectangle(annotatedImg,  left_top, right_bottom, color=(153, 255, 204), thickness=3)
+    return annotatedImg
+
+
+def load_img_url(url):
+    response = requests.get(url)
+    rgbImg = np.array(Image.open(StringIO.StringIO(response.content)))
+    
+    # check image dimension
+    if len(rgbImg.shape) == 2:
+        rgbImg = grey2rgb(rgbImg)
+    return rgbImg
+
 
 class DetectFaceHandler(tornado.web.RequestHandler):
     def get(self):
         # get image from url
         url = self.get_argument('url')
-        response = requests.get(url)
-        rgbImg = np.array(Image.open(StringIO.StringIO(response.content)))
-        
-        # check image dimension
-        if len(rgbImg.shape) == 2:
-            rgbImg = gray2rgb(rgbImg)
+        rgbImg = load_img_url(url)
 
         # detect face
         boundings = detectface(rgbImg)

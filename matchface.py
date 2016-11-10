@@ -28,7 +28,7 @@ from PIL import Image
 import numpy as np
 import openface
 
-from detectface import gray2rgb
+from detectface import grey2rgb, load_img_url
 
 PORT=8000
 np.set_printoptions(precision=2)
@@ -124,15 +124,8 @@ class MatchFaceHandler(tornado.web.RequestHandler):
         # print url1
         # print 'url2:'
         # print url2
-        response = requests.get(url1)
-        img1 = np.array(Image.open(StringIO.StringIO(response.content)))
-        if len(img1.shape) == 2:
-            img1 = gray2rgb(img1)
-
-        response = requests.get(url2)
-        img2 = np.array(Image.open(StringIO.StringIO(response.content)))
-        if len(img2.shape) == 2:
-            img2 = gray2rgb(img2)
+        img1 = load_img_url(url1)
+        img2 = load_img_url(url2)
 
         # do the detection
         reps1 = extract_face(img1)
@@ -151,6 +144,10 @@ class MatchFaceHandler(tornado.web.RequestHandler):
 
         dist = CompareFace(reps1, reps2)
         rst = {'distance': dist}
+
+        # convert dist to similarity score:
+        # score = 1/(e**dist)
+
         self.write(json.dumps(rst))
         #print ('processing images took {} seconds'.format(time.time()-start))
         pass
