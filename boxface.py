@@ -70,21 +70,20 @@ class BoxFaceHandler(tornado.web.RequestHandler):
         # get image from url
         url = self.get_argument('url')
         rgbImg = load_img_url(url)
-
-        # detect face
-        boundings = detectface(rgbImg)
-
-        # draw bounding box
-        img = draw_box(rgbImg, boundings)
-        
-        output = StringIO.StringIO()
-        size = (img.shape[1],img.shape[0]) 
-        #str_img = cv2.imencode('.jpg', newimg).tostring()
-        fimg = Image.frombytes("RGB", size, img.tostring(), "raw")
-        # img = Image.fromarray(cm.gist_earth(img, bytes=True))
-        fimg.save(output, format="png")
-        self.write(output.getvalue())
-        self.set_header("Content-type",  "image/png")
+        if not isinstance(rgbImg, int):
+            boundings = detectface(rgbImg)
+            img = draw_box(rgbImg, boundings)
+            
+            output = StringIO.StringIO()
+            size = (img.shape[1],img.shape[0]) 
+            #str_img = cv2.imencode('.jpg', newimg).tostring()
+            fimg = Image.frombytes("RGB", size, img.tostring(), "raw")
+            # img = Image.fromarray(cm.gist_earth(img, bytes=True))
+            fimg.save(output, format="png")
+            self.write(output.getvalue())
+            self.set_header("Content-type",  "image/png")
+        else:
+            self.write('Something wrong with the url, please check\n')
         pass
 
     # def post (self):

@@ -120,38 +120,38 @@ class MatchFaceHandler(tornado.web.RequestHandler):
         #start = time.time()
         url1 = self.get_argument('url1')
         url2 = self.get_argument('url2')
-        # print 'url1:'
-        # print url1
-        # print 'url2:'
-        # print url2
         img1 = load_img_url(url1)
         img2 = load_img_url(url2)
 
-        # do the detection
-        reps1 = extract_face(img1)
-        reps2 = extract_face(img2)
-        # if reps1:
-        #     n1 = len(reps1)
-        #     print ('{} faces are detected in url1'.format(n1))
-        # else:
-        #     print 'None face is detected in url1'
+        if not isinstance(img1,int):
+            if not isinstance(img2, int):
+                # do the detection
+                reps1 = extract_face(img1)
+                reps2 = extract_face(img2)
+                # if reps1:
+                #     n1 = len(reps1)
+                #     print ('{} faces are detected in url1'.format(n1))
+                # else:
+                #     print 'None face is detected in url1'
 
-        # if reps2:
-        #     n2 = len(reps2)
-        #     print ('{} faces are detected in url2'.format(n2))
-        # else:
-        #     print 'None face is detected in url2'
+                # if reps2:
+                #     n2 = len(reps2)
+                #     print ('{} faces are detected in url2'.format(n2))
+                # else:
+                #     print 'None face is detected in url2'
 
-        dist = CompareFace(reps1, reps2)
-        rst = {'distance': dist}
+                dist = CompareFace(reps1, reps2)
+                rst = {'distance': dist}
 
-        # convert dist to similarity score:
-        # score = 1/(e**dist)
+                # convert dist to similarity score:
+                # score = 1/(e**dist)
 
-        self.write(json.dumps(rst))
-        #print ('processing images took {} seconds'.format(time.time()-start))
-        pass
-
+                self.write(json.dumps(rst))
+                #print ('processing images took {} seconds'.format(time.time()-start))
+            else:
+                self.write('Something wrong with the url2, please check\n')
+        else:
+            self.write('Something wrong with the url1, please check\n')
 
 if __name__ == "__main__":
     # Setup the server

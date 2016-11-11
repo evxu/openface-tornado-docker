@@ -104,6 +104,8 @@ def draw_box(rgbImg, bbs):
 
 def load_img_url(url):
     response = requests.get(url)
+    if response.status_code != 200:
+        return 0
     rgbImg = np.array(Image.open(StringIO.StringIO(response.content)))
     
     # check image dimension
@@ -117,13 +119,12 @@ class DetectFaceHandler(tornado.web.RequestHandler):
         # get image from url
         url = self.get_argument('url')
         rgbImg = load_img_url(url)
-
-        # detect face
-        boundings = detectface(rgbImg)
-
-        # write results
-        results = {'results': boundings, 'shape':rgbImg.shape}
-        self.write(json.dumps(results))
+        if not isinstance(rgbImg, int):
+            boundings = detectface(rgbImg)
+            results = {'results': boundings, 'shape':rgbImg.shape}
+            self.write(json.dumps(results))
+        else:
+            self.write('Something wrong with the url, please check\n')
         pass
 
     def post (self):
